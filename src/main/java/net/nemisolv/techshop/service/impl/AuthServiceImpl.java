@@ -2,6 +2,7 @@ package net.nemisolv.techshop.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -23,6 +24,7 @@ import net.nemisolv.techshop.repository.RoleRepository;
 import net.nemisolv.techshop.repository.UserRepository;
 import net.nemisolv.techshop.security.UserPrincipal;
 import net.nemisolv.techshop.service.AuthService;
+import net.nemisolv.techshop.service.EmailService;
 import net.nemisolv.techshop.service.JwtService;
 import net.nemisolv.techshop.util.ResultCode;
 import org.springframework.http.HttpHeaders;
@@ -53,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
     private final ConfirmationEmailRepository confirmationEmailRepo;
     private final UserHelper userHelper;
     private final UserMapper userMapper;
+    private final EmailService emailService;
 
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest authRequest) {
@@ -85,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void registerExternal(RegisterExternalRequest authRequest) {
+    public void registerExternal(RegisterExternalRequest authRequest) throws MessagingException {
         Optional<User> user = userRepo.findByEmail(authRequest.getEmail());
         // with normal registration, don't need to specify any role
 
@@ -108,6 +111,10 @@ public class AuthServiceImpl implements AuthService {
                             confirmationEmailRepo.save(confirmationEmail);
                         });
                 // TODO: send a new verification email
+                UserPrincipal userPrincipal = UserPrincipal.create(userToUpdate);
+                String token = jwtService.generateToken(userPrincipal);
+                emailService.sendRegistrationEmail(userToUpdate, token);
+
 
             }
         }else {
@@ -126,7 +133,10 @@ public class AuthServiceImpl implements AuthService {
 
             User savedUser = userRepo.save(newUser);
 
-            // TODO send verification email
+            UserPrincipal userPrincipal = UserPrincipal.create(savedUser);
+            // store token
+            String token = jwtService.generateToken(userPrincipal);
+            emailService.sendRegistrationEmail(savedUser, token);
         }
 
 
