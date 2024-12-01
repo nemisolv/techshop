@@ -28,6 +28,8 @@ public class UserPrincipal implements UserDetails, OAuth2User {
     private Map<String, Object> attributes;
     private Collection<? extends GrantedAuthority> authorities;
 
+    private Role role;
+
 
     public static UserPrincipal create(User user) {
 
@@ -41,6 +43,7 @@ public class UserPrincipal implements UserDetails, OAuth2User {
                 .imgUrl(user.getImgUrl())
                 .active(user.isEnabled())
                 .authorities(authorities)
+                .role(user.getRole())
                 .build();
     }
 
@@ -49,7 +52,7 @@ public class UserPrincipal implements UserDetails, OAuth2User {
             return List.of();
         }
         var authorities = new java.util.ArrayList<>(role.getPermissions().stream()
-                .map(permission -> new SimpleGrantedAuthority(permission.getName()))
+                .map(permission -> new SimpleGrantedAuthority(permission.getName().name()))
                 .toList());
 
         authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
@@ -60,6 +63,7 @@ public class UserPrincipal implements UserDetails, OAuth2User {
     public static UserPrincipal create(User user, Map<String,Object> attributes) {
         UserPrincipal userPrincipal = create(user);
         userPrincipal.setAttributes(attributes);
+
         return userPrincipal;
     }
 

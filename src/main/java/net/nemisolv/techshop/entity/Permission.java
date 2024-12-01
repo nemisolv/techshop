@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import net.nemisolv.techshop.core._enum.PermissionName;
 
 import java.util.Set;
 
@@ -18,14 +19,15 @@ import java.util.Set;
 public class Permission extends IdBaseEntity {
 
     @Column(nullable = false, unique = true)
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private PermissionName name;
 
     private String description;
 
     @ManyToMany(mappedBy = "permissions")
     private Set<Role> roles;
 
-    public Permission(String name, String description) {
+    public Permission(PermissionName name, String description) {
         this.name = name;
         this.description = description;
     }

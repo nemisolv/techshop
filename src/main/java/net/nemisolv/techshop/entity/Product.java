@@ -21,8 +21,6 @@ public class Product extends IdBaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
     private BigDecimal price;
-    private String brandId;  // don't store like an object
-    private String categoryId;
     private String unit;
     private String mainImgUrl;
     private Integer quantity;

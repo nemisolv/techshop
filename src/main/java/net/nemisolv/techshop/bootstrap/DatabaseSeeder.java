@@ -2,6 +2,7 @@ package net.nemisolv.techshop.bootstrap;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.nemisolv.techshop.core._enum.PermissionName;
 import net.nemisolv.techshop.core._enum.RoleName;
 import net.nemisolv.techshop.entity.*;
 import net.nemisolv.techshop.repository.*;
@@ -43,46 +44,53 @@ public class DatabaseSeeder implements CommandLineRunner {
     private void seedPermissions() {
         if (permissionRepository.count() == 0) {
             log.info("Seeding permissions...");
+
             List<Permission> permissions = List.of(
+                    // Role Management
+                    Permission.builder().name(PermissionName.ASSIGN_ROLE).description(PermissionName.ASSIGN_ROLE.getDescription()).build(),
+
+
                     // User Management
-                    Permission.builder().name("CREATE_USER").description("Can create users").build(),
-                    Permission.builder().name("UPDATE_USER").description("Can update users").build(),
-                    Permission.builder().name("DELETE_USER").description("Can delete users").build(),
-                    Permission.builder().name("VIEW_USER").description("Can view users").build(),
+                    Permission.builder().name(PermissionName.CREATE_USER).description(PermissionName.CREATE_USER.getDescription()).build(),
+                    Permission.builder().name(PermissionName.UPDATE_USER).description(PermissionName.UPDATE_USER.getDescription()).build(),
+                    Permission.builder().name(PermissionName.DELETE_USER).description(PermissionName.DELETE_USER.getDescription()).build(),
+                    Permission.builder().name(PermissionName.VIEW_USER).description(PermissionName.VIEW_USER.getDescription()).build(),
 
                     // Product Management
-                    Permission.builder().name("CREATE_PRODUCT").description("Can create products").build(),
-                    Permission.builder().name("UPDATE_PRODUCT").description("Can update products").build(),
-                    Permission.builder().name("DELETE_PRODUCT").description("Can delete products").build(),
-                    Permission.builder().name("VIEW_PRODUCT").description("Can view products").build(),
+                    Permission.builder().name(PermissionName.CREATE_PRODUCT).description(PermissionName.CREATE_PRODUCT.getDescription()).build(),
+                    Permission.builder().name(PermissionName.UPDATE_PRODUCT).description(PermissionName.UPDATE_PRODUCT.getDescription()).build(),
+                    Permission.builder().name(PermissionName.DELETE_PRODUCT).description(PermissionName.DELETE_PRODUCT.getDescription()).build(),
+                    Permission.builder().name(PermissionName.VIEW_PRODUCT).description(PermissionName.VIEW_PRODUCT.getDescription()).build(),
 
                     // Inventory Management
-                    Permission.builder().name("VIEW_INVENTORY").description("Can view inventory").build(),
-                    Permission.builder().name("UPDATE_INVENTORY").description("Can update inventory").build(),
+                    Permission.builder().name(PermissionName.VIEW_INVENTORY).description(PermissionName.VIEW_INVENTORY.getDescription()).build(),
+                    Permission.builder().name(PermissionName.UPDATE_INVENTORY).description(PermissionName.UPDATE_INVENTORY.getDescription()).build(),
 
                     // Order Management
-                    Permission.builder().name("CREATE_ORDER").description("Can create orders").build(),
-                    Permission.builder().name("UPDATE_ORDER").description("Can update orders").build(),
-                    Permission.builder().name("DELETE_ORDER").description("Can delete orders").build(),
-                    Permission.builder().name("VIEW_ORDER").description("Can view orders").build(),
+                    Permission.builder().name(PermissionName.CREATE_ORDER).description(PermissionName.CREATE_ORDER.getDescription()).build(),
+                    Permission.builder().name(PermissionName.UPDATE_ORDER).description(PermissionName.UPDATE_ORDER.getDescription()).build(),
+                    Permission.builder().name(PermissionName.DELETE_ORDER).description(PermissionName.DELETE_ORDER.getDescription()).build(),
+                    Permission.builder().name(PermissionName.VIEW_ORDER).description(PermissionName.VIEW_ORDER.getDescription()).build(),
 
                     // Report Management
-                    Permission.builder().name("VIEW_SALES_REPORT").description("Can view sales reports").build(),
-                    Permission.builder().name("VIEW_INVENTORY_REPORT").description("Can view inventory reports").build(),
+                    Permission.builder().name(PermissionName.VIEW_SALES_REPORT).description(PermissionName.VIEW_SALES_REPORT.getDescription()).build(),
+                    Permission.builder().name(PermissionName.VIEW_INVENTORY_REPORT).description(PermissionName.VIEW_INVENTORY_REPORT.getDescription()).build(),
 
                     // Inventory Management
-                    Permission.builder().name("MANAGE_INVENTORY").description("Can manage inventory").build(),
-                    Permission.builder().name("UPDATE_STOCK").description("Can update stock levels").build(),
+                    Permission.builder().name(PermissionName.MANAGE_INVENTORY).description(PermissionName.MANAGE_INVENTORY.getDescription()).build(),
+                    Permission.builder().name(PermissionName.UPDATE_STOCK).description(PermissionName.UPDATE_STOCK.getDescription()).build(),
 
                     // Brand Management
-                    Permission.builder().name("CREATE_BRAND").description("Can create brands").build(),
-                    Permission.builder().name("UPDATE_BRAND").description("Can update brands").build(),
-                    Permission.builder().name("DELETE_BRAND").description("Can delete brands").build(),
-                    Permission.builder().name("VIEW_BRAND").description("Can view brands").build()
+                    Permission.builder().name(PermissionName.CREATE_BRAND).description(PermissionName.CREATE_BRAND.getDescription()).build(),
+                    Permission.builder().name(PermissionName.UPDATE_BRAND).description(PermissionName.UPDATE_BRAND.getDescription()).build(),
+                    Permission.builder().name(PermissionName.DELETE_BRAND).description(PermissionName.DELETE_BRAND.getDescription()).build(),
+                    Permission.builder().name(PermissionName.VIEW_BRAND).description(PermissionName.VIEW_BRAND.getDescription()).build()
             );
+
             permissionRepository.saveAll(permissions);
         }
     }
+
 
     private void seedRoles() {
         if (roleRepository.count() == 0) {
@@ -98,7 +106,14 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .name(RoleName.MANAGER)
                     .description("Manager with restricted permissions")
                     .permissions(allPermissions.stream()
-                            .filter(p -> !p.getName().equals("DELETE_USER"))
+                            .filter(p ->
+                                    !p.getName().equals(PermissionName.DELETE_USER)
+                                    && !p.getName().equals(PermissionName.DELETE_PRODUCT)
+                                    && !p.getName().equals(PermissionName.DELETE_ORDER)
+                                    && !p.getName().equals(PermissionName.DELETE_BRAND)
+//                                    && !p.getName().equals(PermissionName.ASSIGN_ROLE)
+                            )
+
                             .collect(Collectors.toSet()))
                     .build();
 
@@ -106,7 +121,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .name(RoleName.STAFF)
                     .description("Staff with view-only permissions")
                     .permissions(allPermissions.stream()
-                            .filter(p -> p.getName().startsWith("VIEW_"))
+                            .filter(p -> p.getName().name().startsWith("VIEW_"))
                             .collect(Collectors.toSet()))
                     .build();
 
@@ -114,7 +129,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .name(RoleName.ASSISTANT)
                     .description("Assistant with limited permissions")
                     .permissions(allPermissions.stream()
-                            .filter(p -> p.getName().startsWith("VIEW_") || p.getName().equals("CREATE_ORDER"))
+                            .filter(p -> p.getName().name().startsWith("VIEW_")
+                                    || p.getName().name().equals("CREATE_ORDER"))
                             .collect(Collectors.toSet()))
                     .build();
 
@@ -144,13 +160,13 @@ public class DatabaseSeeder implements CommandLineRunner {
         if (brandRepository.count() == 0) {
             log.info("Seeding brands...");
             List<Brand> brands = List.of(
-                    Brand.builder().name("Apple").description("Premium tech devices").build(),
-                    Brand.builder().name("Samsung").description("Innovative electronics").build(),
-                    Brand.builder().name("Dell").description("High-performance computers").build(),
-                    Brand.builder().name("Sony").description("Electronics and entertainment").build(),
-                    Brand.builder().name("Lenovo").description("Reliable laptops and PCs").build(),
-                    Brand.builder().name("Asus").description("Gaming and versatile laptops").build(),
-                    Brand.builder().name("Generic").description("Unbranded or unknown products").build()
+                    Brand.builder().name("Apple").description("Premium tech devices").logoUrl("https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_%28black%29.svg").build(),
+                    Brand.builder().name("Samsung").description("Innovative electronics").logoUrl("https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg").build(),
+                    Brand.builder().name("Dell").description("High-performance computers").logoUrl("https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_Dell_2020.png").build(),
+                    Brand.builder().name("Sony").description("Electronics and entertainment").logoUrl("https://upload.wikimedia.org/wikipedia/commons/8/84/Sony_logo_2021.svg").build(),
+                    Brand.builder().name("Lenovo").description("Reliable laptops and PCs").logoUrl("https://upload.wikimedia.org/wikipedia/commons/4/4c/Lenovo_logo_2020.svg").build(),
+                    Brand.builder().name("Asus").description("Gaming and versatile laptops").logoUrl("https://upload.wikimedia.org/wikipedia/commons/a/a9/Asus_logo_2021.svg").build(),
+                    Brand.builder().name("Generic").description("Unbranded or unknown products").logoUrl("https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_Dell_2020.png").build() // Using Dell logo as a placeholder for generic.
             );
             brandRepository.saveAll(brands);
             log.info("Brands seeded.");

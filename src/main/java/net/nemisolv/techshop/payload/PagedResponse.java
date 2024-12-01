@@ -15,7 +15,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PagedResponse<T> {
     private int pageNo;
-    private int pageSize;
+    private int limit;
     private List<T> metadata;
     private String title;
     private long totalElements;

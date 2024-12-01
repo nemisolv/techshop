@@ -59,8 +59,8 @@ public class ApplicationConfigChecker implements CommandLineRunner {
     private Long refreshTokenExpireTime;
 
     // OAuth2 redirect URIs to check
-    @Value("${app.oauth2.authorizedRedirectUris}")
-    private String[] authorizedRedirectUris;
+//    @Value("${app.oauth2.authorizedRedirectUris}")
+//    private String[] authorizedRedirectUris;
 
     @Override
     public void run(String... args) {
@@ -170,16 +170,16 @@ public class ApplicationConfigChecker implements CommandLineRunner {
     }
 
     private void checkRequiredUrls() {
-        if (authorizedRedirectUris == null || authorizedRedirectUris.length == 0) {
-            throw new RuntimeException("OAuth2 Redirect URIs are not set correctly!");
-        }
-
-        for (String uri : authorizedRedirectUris) {
-            if (uri == null || uri.isEmpty()) {
-                throw new RuntimeException("OAuth2 Redirect URI is empty or missing!");
-            }
-        }
-
-        log.info("OAuth2 Authorized Redirect URIs: {}", String.join(", ", authorizedRedirectUris));
+//        if (authorizedRedirectUris == null || authorizedRedirectUris.length == 0) {
+//            throw new RuntimeException("OAuth2 Redirect URIs are not set correctly!");
+//        }
+//
+//        for (String uri : authorizedRedirectUris) {
+//            if (uri == null || uri.isEmpty()) {
+//                throw new RuntimeException("OAuth2 Redirect URI is empty or missing!");
+//            }
+//        }
+//
+//        log.info("OAuth2 Authorized Redirect URIs: {}", String.join(", ", authorizedRedirectUris));
     }
 }

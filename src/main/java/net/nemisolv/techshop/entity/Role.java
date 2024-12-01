@@ -17,6 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
+@Setter
 @SuperBuilder
 public class Role extends IdBaseEntity {
 
@@ -30,15 +31,10 @@ public class Role extends IdBaseEntity {
             joinColumns = @JoinColumn(name = "role_id"), // Cột Role
             inverseJoinColumns = @JoinColumn(name = "permission_id") // Cột Permission
     )
-    private Set<Permission> permissions ;
+    private Set<Permission> permissions;
 
     public Role(RoleName name) {
         this.name = name;
     }
 
-    public Role(RoleName name, String description, Set<Permission> permissions) {
-        this.name = name;
-        this.description = description;
-        this.permissions = permissions;
-    }
 }

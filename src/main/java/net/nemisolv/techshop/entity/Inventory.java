@@ -11,7 +11,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "brands")
+@Table(name = "inventories")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

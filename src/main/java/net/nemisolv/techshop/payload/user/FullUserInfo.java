@@ -1,5 +1,7 @@
 package net.nemisolv.techshop.payload.user;
 
+import java.util.Set;
+
 public record FullUserInfo(
         Long id,
         String username,
@@ -8,7 +10,7 @@ public record FullUserInfo(
         String lastName,
         boolean emailVerified,
         String imgUrl,
-        String role,
+        RoleResponse role,
         String authProvider
 ) {
 }

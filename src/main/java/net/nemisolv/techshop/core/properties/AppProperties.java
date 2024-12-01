@@ -30,7 +30,7 @@ public class AppProperties {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class OAuth2 {
-        @Builder.Default
+        @Value("${oauth2.authorizedRedirectUris}")
         private List<String> authorizedRedirectUris = new ArrayList<>();
     }
 
