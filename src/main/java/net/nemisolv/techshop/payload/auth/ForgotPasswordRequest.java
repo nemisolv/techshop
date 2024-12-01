@@ -1,4 +1,4 @@
-package com.nemisolv.payload.auth;
+package net.nemisolv.techshop.payload.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

@@ -1,18 +1,27 @@
-package com.nemisolv.repository;
+package net.nemisolv.techshop.repository;
 
 
-import com.nemisolv.entity.ConfirmationEmail;
-import com.nemisolv.entity.User;
-import com.nemisolv.entity.type.MailType;
+import net.nemisolv.techshop.core._enum.MailType;
+import net.nemisolv.techshop.entity.ConfirmationEmail;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface ConfirmationEmailRepository extends CrudRepository<ConfirmationEmail, Long> {
     List<ConfirmationEmail> findByUserId(Long userId);
 
-    Optional<ConfirmationEmail> findByUserAndToken(User user, String token);
+    Optional<ConfirmationEmail> findByUserIdAndToken(Long userId, String token);
 
     List<ConfirmationEmail> findByTypeAndUserId(MailType type, Long userId);
+
+    Optional<ConfirmationEmail> findByToken(String token);
+
+    // Custom query to delete revoked, expired, or confirmed confirmation emails
+    @Modifying
+    @Query("DELETE FROM ConfirmationEmail ce WHERE ce.revoked = true OR ce.expiredAt < :now OR ce.confirmedAt < :now")
+    int deleteByRevokedTrueOrExpiredAtBeforeOrConfirmedAtBefore(LocalDateTime now);
 }

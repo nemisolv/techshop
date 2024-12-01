@@ -1,11 +1,15 @@
 package net.nemisolv.techshop.repository;
 
-import net.nemisolv.techshop.entity.Category;
+import jakarta.validation.constraints.NotEmpty;
+import net.nemisolv.techshop.entity.Brand;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface CategoryRepository extends JpaRepository<Category, Long> {
+public interface BrandRepository extends JpaRepository<Brand, Long> {
+    Optional<Brand> findByNameIgnoreCase( String name);
 
-    Optional<Category> findByNameIgnoreCase(String name);
+    Optional<Brand> findByName(String name);
+
+//    Optional<Brand
 }

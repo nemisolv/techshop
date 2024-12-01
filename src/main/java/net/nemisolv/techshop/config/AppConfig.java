@@ -2,7 +2,7 @@ package net.nemisolv.techshop.config;
 
 import lombok.RequiredArgsConstructor;
 import net.nemisolv.techshop.entity.User;
-import net.nemisolv.techshop.exception.ResourceNotFoundException;
+import net.nemisolv.techshop.core.exception.ResourceNotFoundException;
 import net.nemisolv.techshop.repository.UserRepository;
 import net.nemisolv.techshop.security.UserPrincipal;
 import net.nemisolv.techshop.util.ResultCode;

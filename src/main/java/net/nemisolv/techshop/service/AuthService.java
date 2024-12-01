@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public interface AuthService {
     AuthenticationResponse authenticate(AuthenticationRequest authRequest);
-    void registerExternal(RegisterExternalRequest authRequest) throws MessagingException;
+    void registerExternal(RegisterRequest authRequest) throws MessagingException;
 
     // this method is used only by the manager or admin to register a new employee, it is not exposed to the public
     void registerInternal(RegisterInternalRequest authRequest) ;

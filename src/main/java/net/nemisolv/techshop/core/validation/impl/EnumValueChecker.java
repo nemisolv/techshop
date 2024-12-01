@@ -1,36 +1,28 @@
 package net.nemisolv.techshop.core.validation.impl;
 
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import net.nemisolv.techshop.core.validation.EnumValue;
 
-public class EnumValueChecker implements ConstraintValidator<EnumValue, Object> {
+public class EnumValueChecker implements ConstraintValidator<EnumValue, Enum<?>> {
 
-    private String[] stringValues;
-    private int[] integerValues;
-
-    @Override
-    public boolean isValid(Object value, ConstraintValidatorContext constraintValidatorContext) {
-        if (value instanceof String) {
-            for (String s : stringValues) {
-                if (s.equals(value)) {
-                    return true;
-                }
-            }
-        } else if (value instanceof Integer) {
-            for (int s : integerValues) {
-                if (s == ((Integer) value).intValue()) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+    private Class<? extends Enum<?>> enumClass;
 
     @Override
     public void initialize(EnumValue constraintAnnotation) {
-        stringValues = constraintAnnotation.strValues();
-        integerValues = constraintAnnotation.intValues();
+        this.enumClass = constraintAnnotation.enumClass();
+    }
+
+    @Override
+    public boolean isValid(Enum<?> value, ConstraintValidatorContext context) {
+        if (value == null) {
+            return true;
+        }
+        for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
+            if (enumConstant.equals(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

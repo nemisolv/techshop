@@ -10,6 +10,11 @@ public class CommonUtil {
 
     public static final String NUMBER_DIGITS = "0123456789";
 
+    public static String buildEmailUrl(String prefix ,String token) {
+        return Constants.CLIENT_BASE_URL +prefix+"?token="+token;
+
+    }
+
     /**
      * Đổi tên bằng UUID
      *

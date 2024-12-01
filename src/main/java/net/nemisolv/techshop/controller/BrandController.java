@@ -3,53 +3,44 @@ package net.nemisolv.techshop.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.nemisolv.techshop.payload.ApiResponse;
+import net.nemisolv.techshop.payload.brand.BrandRequest;
+import net.nemisolv.techshop.payload.brand.BrandResponse;
 import net.nemisolv.techshop.payload.category.CategoryRequest;
+import net.nemisolv.techshop.service.BrandService;
 import net.nemisolv.techshop.service.CategoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/categories")
-public class CategoryController {
-
-    private final CategoryService categoryService;
+@RequestMapping("/api/v1/brands")
+public class BrandController {
+    private final BrandService brandService;
 
     @GetMapping
-    public ApiResponse<?> getAllCategories() {
-        return new ApiResponse<>(true,
-                "Categories fetched successfully",
-                categoryService.getCategories());
+    public ApiResponse<?> getBrands() {
+        return ApiResponse.success(brandService.getBrands());
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<?> getCategoryById(@PathVariable Long id) {
-        return new ApiResponse<>(true,
-                "Category fetched successfully",
-                categoryService.getCategory(id));
+    public ApiResponse<?> getBrand(@PathVariable Long id) {
+        return ApiResponse.success(brandService.getBrand(id));
     }
 
     @PostMapping
-    public ApiResponse<?> addCategory(@RequestBody @Valid CategoryRequest categoryRequest) {
-        return new ApiResponse<>(true,
-                "Category added successfully",
-                categoryService.createCategory(categoryRequest));
+    public ApiResponse<BrandResponse> createBrand(@Valid @RequestBody BrandRequest request) {
+        return ApiResponse.success(brandService.createBrand(request));
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<?> updateCategory(@PathVariable Long id, @RequestBody @Valid CategoryRequest categoryRequest) {
-        return new ApiResponse<>(true,
-                "Category updated successfully",
-                categoryService.updateCategory(id, categoryRequest));
+    public ApiResponse<BrandResponse> updateBrand(@PathVariable Long id,
+                                                  @Valid @RequestBody BrandRequest request) {
+        return ApiResponse.success(brandService.updateBrand(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public ApiResponse<?> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
-        return  ApiResponse.builder()
-                .success(true)
-                .message("Category deleted successfully")
-                .build();
+    public ApiResponse<?> deleteBrand(@PathVariable Long id) {
+        brandService.deleteBrand(id);
+        return ApiResponse.success(HttpStatus.OK);
     }
 }

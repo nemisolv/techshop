@@ -1,20 +1,20 @@
 package net.nemisolv.techshop.payload.auth;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.validator.constraints.Length;
+import lombok.experimental.SuperBuilder;
+import net.nemisolv.techshop.core._enum.RoleName;
+import net.nemisolv.techshop.core.validation.EnumValue;
 
 @Getter
 @Setter
-@Builder
-public class RegisterExternalRequest {
-    @NotBlank(message = "Email can not be empty")
-    private String email;
-    @Length(min = 6, message = "Password must be at least 6 characters")
-    private String password;
-    private String firstName;
-    private String lastName;
-
+@SuperBuilder
+public class RegisterInternalRequest extends RegisterRequest {
+    @NotEmpty(message = "Role can not be empty")
+    @NotNull(message = "Role can not be null")
+    @EnumValue(enumClass = RoleName.class, message = "Role is not valid")
+    private RoleName role;
 }

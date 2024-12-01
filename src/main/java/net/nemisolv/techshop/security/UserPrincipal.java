@@ -1,15 +1,13 @@
 package net.nemisolv.techshop.security;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import net.nemisolv.techshop.entity.Role;
 import net.nemisolv.techshop.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.Collection;
 import java.util.List;
@@ -19,13 +17,14 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserPrincipal implements UserDetails {
+public class UserPrincipal implements UserDetails, OAuth2User {
     private Long id;
     private String email;
     private String password;
     private String imgUrl;
     private boolean active;
     private boolean emailVerified;
+    @Setter
     private Map<String, Object> attributes;
     private Collection<? extends GrantedAuthority> authorities;
 
@@ -40,12 +39,15 @@ public class UserPrincipal implements UserDetails {
                 .password(user.getPassword())
                 .emailVerified(user.isEmailVerified())
                 .imgUrl(user.getImgUrl())
-                .active(user.isActive())
+                .active(user.isEnabled())
                 .authorities(authorities)
                 .build();
     }
 
     private static List<SimpleGrantedAuthority> buildAuthorities(Role role) {
+        if(role == null) {
+            return List.of();
+        }
         var authorities = new java.util.ArrayList<>(role.getPermissions().stream()
                 .map(permission -> new SimpleGrantedAuthority(permission.getName()))
                 .toList());
@@ -97,5 +99,8 @@ public class UserPrincipal implements UserDetails {
     }
 
 
-
+    @Override
+    public String getName() {
+        return String.valueOf(id);
+    }
 }

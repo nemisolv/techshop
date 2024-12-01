@@ -1,9 +1,10 @@
-package com.nemisolv.entity;
+package net.nemisolv.techshop.entity;
 
 
-import com.nemisolv.entity.type.MailType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+import net.nemisolv.techshop.core._enum.MailType;
 
 import java.time.LocalDateTime;
 
@@ -13,16 +14,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-@Builder
-public class ConfirmationEmail {
+@SuperBuilder
+public class ConfirmationEmail extends IdBaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    // dont need to reference user object here ->
+   private Long userId;
 
     private String token;
 
@@ -39,17 +35,6 @@ public class ConfirmationEmail {
 
     private LocalDateTime expiredAt;
 
-    @Override
-    public String toString() {
-        return "ConfirmationEmail{" +
-                "id=" + id +
-                ", user=" + user +
-                ", token='" + token + '\'' +
-                ", type=" + type +
-                ", revoked=" + revoked +
-                ", confirmedAt=" + confirmedAt +
-                ", expiredAt=" + expiredAt +
-                '}';
-    }
+
 
 }

@@ -10,7 +10,7 @@ import java.util.List;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "ignored")
+@ConfigurationProperties(prefix = "app.ignored")
 public class IgnoredUrlsProperties {
     private List<String> urls = new ArrayList<>();
 }

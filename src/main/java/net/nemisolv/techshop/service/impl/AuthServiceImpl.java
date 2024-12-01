@@ -18,35 +18,36 @@ import net.nemisolv.techshop.entity.User;
 import net.nemisolv.techshop.helper.UserHelper;
 import net.nemisolv.techshop.mapper.UserMapper;
 import net.nemisolv.techshop.payload.auth.*;
-import net.nemisolv.techshop.payload.user.FullUserInfo;
 import net.nemisolv.techshop.repository.ConfirmationEmailRepository;
 import net.nemisolv.techshop.repository.RoleRepository;
 import net.nemisolv.techshop.repository.UserRepository;
 import net.nemisolv.techshop.security.UserPrincipal;
+import net.nemisolv.techshop.security.context.AuthContext;
 import net.nemisolv.techshop.service.AuthService;
 import net.nemisolv.techshop.service.EmailService;
 import net.nemisolv.techshop.service.JwtService;
 import net.nemisolv.techshop.util.ResultCode;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
+
     private final UserRepository userRepo;
     private final RoleRepository roleRepo;
     private final PasswordEncoder passwordEncoder;
@@ -64,96 +65,158 @@ public class AuthServiceImpl implements AuthService {
                     new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
             );
 
-            User user = (User) authentication.getPrincipal();
-
-            if (!user.isEmailVerified()) {
-                throw new BadCredentialException(ResultCode.USER_NOT_VERIFIED);
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            if (!userPrincipal.isEmailVerified()) {
+                throw new BadCredentialException(ResultCode.USER_AUTH_ERROR, "Email not verified");
             }
 
-            return getAuthenticationResponse(user);
+            return generateAuthResponse(userPrincipal);
 
-
-            // do not catch specific exception -> risk of leaking information
-//        }catch (LockedException ex) {
-//            throw new LockedException("User account is locked");
-//        }
-//        catch (AuthenticationException ex) {
-//            throw new BadCredentialsException(ex.getMessage());
-//        }
         } catch (AuthenticationException ex) {
             throw new BadCredentialException(ResultCode.USER_AUTH_ERROR);
         }
-
     }
 
     @Override
     @Transactional
-    public void registerExternal(RegisterExternalRequest authRequest) throws MessagingException {
-        Optional<User> user = userRepo.findByEmail(authRequest.getEmail());
-        // with normal registration, don't need to specify any role
+    public void registerExternal(RegisterRequest authRequest) throws MessagingException {
+        Optional<User> existingUser = userRepo.findByEmail(authRequest.getEmail());
 
-        if (user.isPresent() ) {
-            if(user.get().isEmailVerified()) {
-                throw new BadCredentialException(ResultCode.USER_ALREADY_EXISTS);
-
-            }else {
-                // update user info
-                var userToUpdate = user.get();
-                userToUpdate.setFirstName(authRequest.getFirstName());
-                userToUpdate.setLastName(authRequest.getLastName());
-                userToUpdate.setPassword(passwordEncoder.encode(authRequest.getPassword()));
-                userRepo.save(userToUpdate);
-                // revoke all old tokens before sending new verification email
-
-                confirmationEmailRepo.findByTypeAndUserId(MailType.REGISTRATION_CONFIRMATION, userToUpdate.getId())
-                        .forEach(confirmationEmail -> {
-                            confirmationEmail.setRevoked(true);
-                            confirmationEmailRepo.save(confirmationEmail);
-                        });
-                // TODO: send a new verification email
-                UserPrincipal userPrincipal = UserPrincipal.create(userToUpdate);
-                String token = jwtService.generateToken(userPrincipal);
-                emailService.sendRegistrationEmail(userToUpdate, token);
-
-
-            }
-        }else {
-            // create new user
-            String username = userHelper.generateUsername(authRequest.getFirstName(), authRequest.getLastName());
-            User newUser = User.builder()
-                    .email(authRequest.getEmail())
-                    .username(username)
-                    .password(passwordEncoder.encode(authRequest.getPassword()))
-                    .firstName(authRequest.getFirstName())
-                    .lastName(authRequest.getLastName())
-                    .emailVerified(false)
-                    .enabled(true)
-                    .authProvider(AuthProvider.LOCAL) // default auth provider
-                    .build();
-
-            User savedUser = userRepo.save(newUser);
-
-            UserPrincipal userPrincipal = UserPrincipal.create(savedUser);
-            // store token
-            String token = jwtService.generateToken(userPrincipal);
-            emailService.sendRegistrationEmail(savedUser, token);
+        if (existingUser.isPresent()) {
+            handleExistingUserForRegistration(existingUser.get(), authRequest);
+        } else {
+            createAndSendVerificationEmail(authRequest);
         }
-
-
-
     }
 
     @Override
     public void registerInternal(RegisterInternalRequest authRequest) {
-        Optional<User> user = userRepo.findByEmail(authRequest.getEmail());
-        // with normal registration, don't need to specify any role
+        if (userRepo.existsByEmail(authRequest.getEmail())) {
+            throw new BadCredentialException(ResultCode.USER_ALREADY_EXISTS);
+        }
+        UserPrincipal currentUser  = AuthContext.getCurrentUser();
+//        if(userPrincipal.getAuthorities() )
 
-        if(user.isPresent()) {
+            Role roleToAssign = roleRepo.findByName(authRequest.getRole())
+                    .orElseThrow(() -> new BadRequestException(ResultCode.ROLE_NOT_FOUND));
+
+        // Kiểm tra quyền của user hiện tại
+        if (currentUser.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
+            // Admin có thể gán bất kỳ role nào
+        } else if (currentUser.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MANAGER"))) {
+            // Manager chỉ được gán các role cụ thể
+            if (!isAssignableByManager(roleToAssign)) {
+                throw new AccessDeniedException("Managers cannot assign this role.");
+            }
+        } else {
+            throw new AccessDeniedException("Unauthorized to assign roles.");
+        }
+
+        User newUser = createUser(authRequest, roleToAssign);
+        userRepo.save(newUser);
+    }
+
+    @Override
+    public void refreshToken(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        String refreshToken = extractBearerToken(req.getHeader(HttpHeaders.AUTHORIZATION));
+        if (refreshToken == null) return;
+
+        String userEmail = jwtService.extractUsername(refreshToken);
+        if (userEmail != null) {
+            User user = userRepo.findByEmail(userEmail)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            if (jwtService.isValidToken(refreshToken, UserPrincipal.create(user))) {
+                writeAuthResponse(res, generateAuthResponse(UserPrincipal.create(user)));
+            }
+        }
+    }
+
+    @Override
+    public void verifyEmail(String token) {
+        ConfirmationEmail confirmationEmail = validateConfirmationEmail(token);
+
+        User user = userRepo.findById(confirmationEmail.getUserId())
+                .orElseThrow(() -> new BadRequestException(ResultCode.USER_NOT_FOUND));
+
+        user.setEmailVerified(true);
+        confirmationEmail.setConfirmedAt(LocalDateTime.now());
+
+        userRepo.save(user);
+        confirmationEmailRepo.save(confirmationEmail);
+    }
+
+    @Override
+    public void forgotPassword(String email) {
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
+        // TODO: Implement email sending logic
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequest resetRequest) {
+        ConfirmationEmail confirmationEmail = validateConfirmationEmail(resetRequest.getToken());
+
+        User user = userRepo.findById(confirmationEmail.getUserId())
+                .orElseThrow(() -> new BadRequestException(ResultCode.USER_NOT_FOUND));
+
+        user.setPassword(passwordEncoder.encode(resetRequest.getNewPassword()));
+        confirmationEmail.setConfirmedAt(LocalDateTime.now());
+
+        userRepo.save(user);
+        confirmationEmailRepo.save(confirmationEmail);
+    }
+
+    /**
+     * Helper Methods
+     */
+
+    private AuthenticationResponse generateAuthResponse(UserPrincipal userPrincipal) {
+        User user = userRepo.findByEmail(userPrincipal.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return AuthenticationResponse.builder()
+                .userData(userMapper.toFullUserInfo(user))
+                .accessToken(jwtService.generateToken(userPrincipal))
+                .refreshToken(jwtService.generateRefreshToken(userPrincipal))
+                .build();
+    }
+
+    private void handleExistingUserForRegistration(User user, RegisterRequest authRequest) throws MessagingException {
+        if (user.isEmailVerified()) {
             throw new BadCredentialException(ResultCode.USER_ALREADY_EXISTS);
         }
 
-        Role role = roleRepo.findByName(authRequest.getRole()).orElseThrow(() -> new BadRequestException(ResultCode.ROLE_NOT_FOUND));
-        User newUser = User.builder()
+        updateExistingUser(user, authRequest);
+        sendVerificationEmail(user);
+    }
+
+    private void createAndSendVerificationEmail(RegisterRequest authRequest) throws MessagingException {
+        User newUser = createUser(authRequest, null);
+        userRepo.save(newUser);
+
+        sendVerificationEmail(newUser);
+    }
+
+    private void sendVerificationEmail(User user) throws MessagingException {
+        String token = jwtService.generateToken(UserPrincipal.create(user));
+
+        ConfirmationEmail confirmationEmail = ConfirmationEmail.builder()
+                .token(token)
+                .type(MailType.REGISTRATION_CONFIRMATION)
+                .expiredAt(LocalDateTime.now().plusDays(1))
+                .userId(user.getId())
+                .build();
+
+        confirmationEmailRepo.save(confirmationEmail);
+        emailService.sendRegistrationEmail(user, token);
+    }
+
+    private User createUser(RegisterRequest authRequest, Role role) {
+
+
+
+        return User.builder()
                 .email(authRequest.getEmail())
                 .username(userHelper.generateUsername(authRequest.getFirstName(), authRequest.getLastName()))
                 .password(passwordEncoder.encode(authRequest.getPassword()))
@@ -161,117 +224,51 @@ public class AuthServiceImpl implements AuthService {
                 .lastName(authRequest.getLastName())
                 .emailVerified(false)
                 .enabled(true)
-                .authProvider(AuthProvider.LOCAL) // default auth provider
+                .authProvider(AuthProvider.LOCAL)
                 .role(role)
                 .build();
-
-     userRepo.save(newUser);
-
     }
 
-    @Override
-    public void refreshToken(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        String authHeader = req.getHeader(HttpHeaders.AUTHORIZATION);
-        final String refreshToken;
-        if(authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return;
-        }
-        refreshToken = authHeader.substring(7);
-        String userEmail = jwtService.extractUsername(refreshToken);
-        if(userEmail!=null) {
-                var userDetails = userRepo.findByEmail(userEmail)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            UserPrincipal userPrincipal = UserPrincipal.create(userDetails);
-                if(jwtService.isValidToken(refreshToken,userPrincipal)) {
-                    var newToken = jwtService.generateToken(userPrincipal);
+    private void updateExistingUser(User user, RegisterRequest authRequest) {
+        user.setFirstName(authRequest.getFirstName());
+        user.setLastName(authRequest.getLastName());
+        user.setPassword(passwordEncoder.encode(authRequest.getPassword()));
 
-                    var authResponse = AuthenticationResponse.builder()
-                            .accessToken(newToken)
-                            .refreshToken(refreshToken).build();
-                    new ObjectMapper().writeValue(res.getOutputStream(), authResponse);
-                }
-        }
-    }
+        confirmationEmailRepo.findByTypeAndUserId(MailType.REGISTRATION_CONFIRMATION, user.getId())
+                .forEach(confirmationEmail -> {
+                    confirmationEmail.setRevoked(true);
+                    confirmationEmailRepo.save(confirmationEmail);
+                });
 
-
-    @Override
-    public void verifyEmail(String token) throws BadRequestException {
-        String acc = jwtService.extractUsername(token);
-        User user = userRepo.findByEmail(acc).orElseThrow(() -> new BadRequestException(ResultCode.USER_NOT_FOUND));
-        Optional<ConfirmationEmail> tokenOptional = confirmationEmailRepo.findByUserIdAndToken(user.getId(), token);
-        if(tokenOptional.isEmpty()) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-        ConfirmationEmail confirmationEmail = tokenOptional.get();
-        if(confirmationEmail.isRevoked() ) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-        if(confirmationEmail.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-        // check if email already verified after checking token expired
-        if(confirmationEmail.getConfirmedAt() != null) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-
-        confirmationEmail.setConfirmedAt(LocalDateTime.now());
-        user.setEmailVerified(true);
         userRepo.save(user);
-        confirmationEmailRepo.save(confirmationEmail);
     }
 
-    @Override
-    public void forgotPassword(String email) {
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Email not found"));
-        // TODO: send mail with reset password link
+    private ConfirmationEmail validateConfirmationEmail(String token) {
+        ConfirmationEmail confirmationEmail = confirmationEmailRepo.findByToken(token)
+                .orElseThrow(() -> new BadRequestException(ResultCode.AUTH_TOKEN_INVALID));
+
+        if (confirmationEmail.isRevoked() || confirmationEmail.getExpiredAt().isBefore(LocalDateTime.now())
+                || confirmationEmail.getConfirmedAt() != null) {
+            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
+        }
+
+        return confirmationEmail;
     }
 
-    @Override
-    public void resetPassword(ResetPasswordRequest reset) throws BadRequestException {
-        String acc;
-        try {
-            acc = jwtService.extractUsername(reset.getToken());
-
-        } catch (Exception e) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
+    private String extractBearerToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
         }
-        User user = userRepo.findByEmail(acc).orElseThrow(() -> new BadRequestException(ResultCode.USER_NOT_FOUND));
-        Optional<ConfirmationEmail> tokenOptional = confirmationEmailRepo.findByUserIdAndToken(user.getId(), reset.getToken());
-        if(tokenOptional.isEmpty()) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-        ConfirmationEmail confirmationEmail = tokenOptional.get();
-        if(confirmationEmail.isRevoked() ) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-        if(confirmationEmail.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-        if(confirmationEmail.getConfirmedAt() != null) {
-            throw new BadRequestException(ResultCode.AUTH_TOKEN_INVALID);
-        }
-
-        user.setPassword(passwordEncoder.encode(reset.getNewPassword()));
-        userRepo.save(user);
-        confirmationEmail.setConfirmedAt(LocalDateTime.now());
-        confirmationEmailRepo.save(confirmationEmail);
-
+        return authHeader.substring(7);
     }
 
-
-
-    private AuthenticationResponse getAuthenticationResponse(User user) {
-
-        // instead of adding user's info to token, let's separate it
-        FullUserInfo userInfo =  userMapper.toFullUserInfo(user);
-        UserPrincipal userPrincipal = UserPrincipal.create(user);
-        String token = jwtService.generateToken(userPrincipal);
-        String refreshToken = jwtService.generateRefreshToken(userPrincipal);
-
-        return AuthenticationResponse.builder()
-                .userData(userInfo)
-                .accessToken(token).refreshToken(refreshToken).build();
+    private void writeAuthResponse(HttpServletResponse res, AuthenticationResponse authResponse) throws IOException {
+        new ObjectMapper().writeValue(res.getOutputStream(), authResponse);
     }
 
+    private boolean isAssignableByManager(Role role) {
+        List<String> allowedRolesForManager = List.of("ROLE_STAFF", "ROLE_ASSISTANT");
+        return allowedRolesForManager.contains(role.getName().toString());
+    }
 
 }

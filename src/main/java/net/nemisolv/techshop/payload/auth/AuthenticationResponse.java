@@ -1,8 +1,8 @@
-package com.nemisolv.payload.auth;
+package net.nemisolv.techshop.payload.auth;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.nemisolv.payload.user.FullUserInfoDTO;
 import lombok.*;
+import net.nemisolv.techshop.payload.user.FullUserInfo;
 
 @Getter
 @Setter
@@ -13,7 +13,5 @@ import lombok.*;
 public class AuthenticationResponse {
     private String accessToken;
     private String refreshToken;
-    private FullUserInfoDTO userData;
-    private String secretImageUri;
-    private boolean mfaEnabled;
+    private FullUserInfo userData;
 }

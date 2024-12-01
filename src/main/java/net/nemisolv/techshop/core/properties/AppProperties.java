@@ -1,4 +1,4 @@
-package com.nemisolv.config;
+package net.nemisolv.techshop.core.properties;
 
 import lombok.*;
 import org.springframework.beans.factory.annotation.Value;

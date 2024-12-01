@@ -11,7 +11,6 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-
 @Documented
 @Retention(RUNTIME)
 @Constraint(validatedBy = {EnumValueChecker.class})
@@ -20,16 +19,13 @@ public @interface EnumValue {
 
     String message() default "Invalid value. This is not permitted.";
 
-    String[] strValues() default {};
-
-    int[] intValues() default {};
+    Class<? extends Enum<?>> enumClass();
 
     // groups
     Class<?>[] groups() default {};
 
     // payload
     Class<? extends Payload>[] payload() default {};
-
 
     @Target({FIELD, METHOD, PARAMETER, ANNOTATION_TYPE})
     @Retention(RUNTIME)
