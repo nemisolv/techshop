@@ -17,39 +17,28 @@ public class CategoryController {
 
     @GetMapping
     public ApiResponse<?> getAllCategories() {
-        return new ApiResponse<>(true,
-                "Categories fetched successfully",
-                categoryService.getCategories());
+        return ApiResponse.success(categoryService.getCategories());
     }
 
     @GetMapping("/{id}")
     public ApiResponse<?> getCategoryById(@PathVariable Long id) {
-        return new ApiResponse<>(true,
-                "Category fetched successfully",
-                categoryService.getCategory(id));
+        return ApiResponse.success(categoryService.getCategory(id));
     }
 
     @PostMapping
     public ApiResponse<?> addCategory(@RequestBody @Valid CategoryRequest categoryRequest) {
-        return new ApiResponse<>(true,
-                "Category added successfully",
-                categoryService.createCategory(categoryRequest));
+        return ApiResponse.success(categoryService.createCategory(categoryRequest));
     }
 
     @PutMapping("/{id}")
     public ApiResponse<?> updateCategory(@PathVariable Long id, @RequestBody @Valid CategoryRequest categoryRequest) {
-        return new ApiResponse<>(true,
-                "Category updated successfully",
-                categoryService.updateCategory(id, categoryRequest));
+        return ApiResponse.success(categoryService.updateCategory(id, categoryRequest));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<?> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
-        return  ApiResponse.builder()
-                .success(true)
-                .message("Category deleted successfully")
-                .build();
+        return ApiResponse.success("Category deleted successfully");
     }
 }

@@ -1,9 +1,11 @@
 package net.nemisolv.techshop.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.nemisolv.techshop.payload.ApiResponse;
 import net.nemisolv.techshop.payload.PagedResponse;
 import net.nemisolv.techshop.payload.QueryOption;
+import net.nemisolv.techshop.payload.permission.AssignPermissionToRoleRequest;
 import net.nemisolv.techshop.payload.permission.PermissionResponse;
 import net.nemisolv.techshop.service.PermissionService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,7 +23,7 @@ public class PermissionController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ApiResponse<PagedResponse<PermissionResponse>> getPermissions(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection,
@@ -43,12 +45,14 @@ public class PermissionController {
         return ApiResponse.success(permissionService.getPermissionById(id));
     }
 
-    @PostMapping("/roles/{roleId}/permissions/{permissionId}")
+    @PostMapping("/assign")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ApiResponse<PermissionResponse> assignPermissionToRole(@PathVariable Long roleId, @PathVariable Long permissionId) {
-        return ApiResponse.success(permissionService.assignPermissionToRole(roleId, permissionId));
+    public ApiResponse<PermissionResponse> assignPermissionToRole(@RequestBody @Valid AssignPermissionToRoleRequest request) {
+        return ApiResponse.success(permissionService.assignPermissionToRole(request));
     }
 
+
+    // didn't test this endpoint and below
     @PutMapping("/roles/{roleId}/permissions")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ApiResponse<List<PermissionResponse>> updatePermissionsForRole(@PathVariable Long roleId, @RequestBody List<Long> permissionIds) {

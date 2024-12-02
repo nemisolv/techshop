@@ -25,7 +25,7 @@ public class Role extends IdBaseEntity {
     @Enumerated(EnumType.STRING)
     private RoleName name;
     private String description;
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permission", // Tên bảng trung gian
             joinColumns = @JoinColumn(name = "role_id"), // Cột Role

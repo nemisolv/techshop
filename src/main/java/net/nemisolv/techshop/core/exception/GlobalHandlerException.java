@@ -1,6 +1,5 @@
 package net.nemisolv.techshop.core.exception;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.nemisolv.techshop.util.ResultCode;
@@ -9,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -82,15 +82,6 @@ public class GlobalHandlerException extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(error, headers, status);
     }
 
-    @ExceptionHandler(EntityNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ResponseBody
-    public ErrorDTO handleEntityNotFoundException(HttpServletRequest request, EntityNotFoundException ex) {
-        log.error("Request: {} raised exception: {}", request.getRequestURI(), ex.getMessage(), ex);
-        return buildErrorDTO(request, ResultCode.RESOURCE_NOT_FOUND,
-                List.of(ResultCode.RESOURCE_NOT_FOUND.message()));
-    }
-
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
@@ -106,6 +97,24 @@ public class GlobalHandlerException extends ResponseEntityExceptionHandler {
     public ErrorDTO handleBadRequestException(HttpServletRequest request, BadRequestException ex) {
         log.error("Request: {} raised exception: {}", request.getRequestURI(), ex.getMessage(), ex);
         return buildErrorDTO(request,ex.getResultCode(),
+                List.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler(value = {AuthorizationDeniedException.class})
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    public ErrorDTO handleAuthorizationDeniedException(HttpServletRequest request, AuthorizationDeniedException ex) {
+        log.error("Request: {} raised exception: {}", request.getRequestURI(), ex.getMessage(), ex);
+        return buildErrorDTO(request, ResultCode.USER_PERMISSION_ERROR,
+                List.of(ResultCode.USER_PERMISSION_ERROR.message()));
+    }
+
+    @ExceptionHandler(PermissionException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    public ErrorDTO handlePermissionException(HttpServletRequest request, PermissionException ex) {
+        log.error("Request: {} raised exception: {}", request.getRequestURI(), ex.getMessage(), ex);
+        return buildErrorDTO(request, ex.getResultCode(),
                 List.of(ex.getMessage()));
     }
 

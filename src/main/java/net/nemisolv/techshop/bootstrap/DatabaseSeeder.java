@@ -2,6 +2,7 @@ package net.nemisolv.techshop.bootstrap;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.nemisolv.techshop.core._enum.AuthProvider;
 import net.nemisolv.techshop.core._enum.PermissionName;
 import net.nemisolv.techshop.core._enum.RoleName;
 import net.nemisolv.techshop.entity.*;
@@ -35,11 +36,84 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedPermissions();
         seedRoles();
         seedAdminUser();
+        seedOtherUsers();
         seedBrands();
         seedCategories();
         seedProductsAndInventory();
         log.info("Database seeding completed.");
     }
+
+    private void seedOtherUsers() {
+        if (userRepository.count() == 1) {
+            log.info("Seeding other users...");
+
+            Role managerRole = roleRepository.findByName(RoleName.MANAGER)
+                    .orElseThrow(() -> new RuntimeException("Manager role not found"));
+
+            Role staffRole = roleRepository.findByName(RoleName.STAFF)
+                    .orElseThrow(() -> new RuntimeException("Staff role not found"));
+
+            Role assistantRole = roleRepository.findByName(RoleName.ASSISTANT)
+                    .orElseThrow(() -> new RuntimeException("Assistant role not found"));
+
+            // Manager user
+            User manager = User.builder()
+                    .username("manager")
+                    .email("manager@gmail.com")
+                    .password(passwordEncoder.encode("manager"))
+                    .role(managerRole)
+                    .enabled(true)
+                    .emailVerified(true)
+                    .authProvider(AuthProvider.LOCAL)
+                    .address("123 Manager St, Manager City")
+                    .phoneNumber("1234567890")
+                    .firstName("Doe")
+                    .lastName("Jane")
+                    .build();
+
+            manager = userRepository.save(manager); // Save manager user
+            log.info("Manager user created: email {}, password {}", manager.getEmail(), "manager");
+
+            // Staff user
+            User staff = User.builder()
+                    .username("staff")
+                    .email("staff@gmail.com")
+                    .password(passwordEncoder.encode("staff"))
+                    .role(staffRole)
+                    .enabled(true)
+                    .emailVerified(true)
+                    .authProvider(AuthProvider.LOCAL)
+                    .address("123 Staff St, Staff City")
+                    .phoneNumber("9876543210")
+                    .firstName("Smith")
+                    .lastName("John")
+                    .build();
+
+            staff = userRepository.save(staff); // Save staff user
+            log.info("Staff user created: email {}, password {}", staff.getEmail(), "staff");
+
+            // Assistant user
+            User assistant = User.builder()
+                    .username("assistant")
+                    .email("assistant@gmail.com")
+                    .password(passwordEncoder.encode("assistant"))
+                    .role(assistantRole)
+                    .enabled(true)
+                    .emailVerified(true)
+                    .authProvider(AuthProvider.LOCAL)
+                    .address("123 Assistant St, Assistant City")
+                    .phoneNumber("5555555555")
+                    .firstName("Alice")
+                    .lastName("Doe")
+                    .build();
+
+            assistant = userRepository.save(assistant); // Save assistant user
+            log.info("Assistant user created: email {}, password {}", assistant.getEmail(), "staff");
+
+            log.info("Other users seeded.");
+        }
+    }
+
 
     private void seedPermissions() {
         if (permissionRepository.count() == 0) {
@@ -99,6 +173,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             Role adminRole = Role.builder()
                     .name(RoleName.ADMIN)
                     .description("Administrator with all permissions")
+
                     .permissions(Set.copyOf(allPermissions))
                     .build();
 
@@ -149,7 +224,16 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .email("admin@techshop.com")
                     .password(passwordEncoder.encode("admin"))
                     .role(adminRole)
-                    .build();
+                    .enabled(true)
+                    .emailVerified(true)
+                    .authProvider(AuthProvider.LOCAL)
+                    .address("123 Admin St, Admin City")
+                    .phoneNumber("1234567890")
+                    .firstName("Doe")
+                    .lastName("John")
+
+
+                        .build();
 
             userRepository.save(admin);
             log.info("Admin user created: email = admin@techshop.com, password = admin");

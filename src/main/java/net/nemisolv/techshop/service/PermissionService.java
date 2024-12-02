@@ -2,6 +2,7 @@ package net.nemisolv.techshop.service;
 
 import net.nemisolv.techshop.payload.PagedResponse;
 import net.nemisolv.techshop.payload.QueryOption;
+import net.nemisolv.techshop.payload.permission.AssignPermissionToRoleRequest;
 import net.nemisolv.techshop.payload.permission.PermissionRequest;
 import net.nemisolv.techshop.payload.permission.PermissionResponse;
 
@@ -15,7 +16,7 @@ public interface PermissionService {
     PermissionResponse getPermissionById(Long id);
     List<PermissionResponse> getPermissionsByRole(Long roleId);
 
-    PermissionResponse assignPermissionToRole(Long roleId, Long permissionId);
+    PermissionResponse assignPermissionToRole(AssignPermissionToRoleRequest request);
 
     List<PermissionResponse> updatePermissionsForRole(Long roleId, List<Long> permissionIds);
 }

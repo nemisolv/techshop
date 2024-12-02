@@ -1,21 +1,25 @@
 package net.nemisolv.techshop.service.impl;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import net.nemisolv.techshop.core._enum.PermissionName;
 import net.nemisolv.techshop.core._enum.RoleName;
+import net.nemisolv.techshop.core.exception.BadRequestException;
+import net.nemisolv.techshop.core.exception.PermissionException;
+import net.nemisolv.techshop.core.exception.ResourceNotFoundException;
 import net.nemisolv.techshop.entity.Permission;
 import net.nemisolv.techshop.entity.Role;
 import net.nemisolv.techshop.helper.AccessHelper;
 import net.nemisolv.techshop.mapper.PermissionMapper;
 import net.nemisolv.techshop.payload.PagedResponse;
 import net.nemisolv.techshop.payload.QueryOption;
+import net.nemisolv.techshop.payload.permission.AssignPermissionToRoleRequest;
 import net.nemisolv.techshop.payload.permission.PermissionResponse;
 import net.nemisolv.techshop.repository.PermissionRepository;
 import net.nemisolv.techshop.repository.RoleRepository;
 import net.nemisolv.techshop.security.UserPrincipal;
 import net.nemisolv.techshop.security.context.AuthContext;
 import net.nemisolv.techshop.service.PermissionService;
+import net.nemisolv.techshop.util.ResultCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -82,14 +86,14 @@ public class PermissionServiceImpl implements PermissionService {
     public PermissionResponse getPermissionById(Long id) {
         return permissionRepository.findById(id)
                 .map(permissionMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException("Permission not found with id: " + id));
+                .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Permission not found with id: " + id));
     }
 
     @Override
     public List<PermissionResponse> getPermissionsByRole(Long roleId) {
         Optional<Role> role = roleRepository.findById(roleId);
         if(role.isEmpty()) {
-            throw new EntityNotFoundException("Role not found with id: " + roleId);
+            throw new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Role not found with id: " + roleId);
         }
         return role.get().getPermissions().stream()
                 .map(permissionMapper::toResponse)
@@ -99,7 +103,10 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public PermissionResponse assignPermissionToRole(Long roleId, Long permissionId) {
+    public PermissionResponse assignPermissionToRole(AssignPermissionToRoleRequest request) {
+        Long roleId = request.roleId();
+        Long permissionId = request.permissionId();
+
         UserPrincipal currentUser = AuthContext.getCurrentUser();
 
         if (currentUser == null || !AccessHelper.isAccessAllowed(PermissionName.ASSIGN_ROLE)) {
@@ -107,12 +114,12 @@ public class PermissionServiceImpl implements PermissionService {
         }
 
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + roleId));
+                .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Role not found with id: " + roleId));
         Permission permission = permissionRepository.findById(permissionId)
-                .orElseThrow(() -> new EntityNotFoundException("Permission not found with id: " + permissionId));
+                .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Permission not found with id: " + permissionId));
 
         if(role.getPermissions().contains(permission)) {
-            throw new EntityNotFoundException("Permission already assigned to role");
+            throw new BadRequestException(ResultCode.PERMISSION_ALREADY_ASSIGNED);
         }
 
         if (currentUser.getRole().getName() == RoleName.ADMIN) {
@@ -123,7 +130,7 @@ public class PermissionServiceImpl implements PermissionService {
             if (isBasicPermission(permission)) {
                 role.getPermissions().add(permission);
             } else {
-                throw new AccessDeniedException("Managers cannot assign advanced permissions.");
+                throw new PermissionException("Managers cannot assign advanced permissions.");
             }
         }
 
@@ -136,17 +143,17 @@ public class PermissionServiceImpl implements PermissionService {
         UserPrincipal currentUser = AuthContext.getCurrentUser();
 
         if (currentUser == null || !AccessHelper.isAccessAllowed(PermissionName.ASSIGN_ROLE)) {
-            throw new AccessDeniedException("Permission denied to assign role permissions.");
+            throw new PermissionException(ResultCode.USER_PERMISSION_ERROR,"Permission denied to assign role permissions.");
         }
 
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + roleId));
+                .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Role not found with id: " + roleId));
         List<Permission> permissions = permissionRepository.findAllById(permissionIds);
 
 
 
         if(permissionIds.size() != permissions.size()) {
-            throw new EntityNotFoundException("Some permissions not found");
+            throw new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Some permissions not found");
         }
 
 

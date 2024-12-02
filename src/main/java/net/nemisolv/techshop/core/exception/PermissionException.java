@@ -7,15 +7,20 @@ import net.nemisolv.techshop.util.ResultCode;
 @Getter
 @Setter
 
-public class BadRequestException extends RuntimeException {
+public class PermissionException extends RuntimeException {
     private ResultCode resultCode;
-    public BadRequestException(ResultCode resultCode) {
+    public PermissionException(ResultCode resultCode) {
         super(resultCode.message());
         this.resultCode = resultCode;
     }
 
-    public BadRequestException(ResultCode resultCode,String customMessage) {
+    public PermissionException(ResultCode resultCode, String customMessage) {
         super(customMessage);
         this.resultCode = resultCode;
+    }
+
+    public PermissionException(String message) {
+        super(message);
+        this.resultCode = ResultCode.USER_PERMISSION_ERROR;
     }
 }

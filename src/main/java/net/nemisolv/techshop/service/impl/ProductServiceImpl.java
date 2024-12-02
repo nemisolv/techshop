@@ -1,6 +1,5 @@
 package net.nemisolv.techshop.service.impl;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.nemisolv.techshop.core._enum.PermissionName;
@@ -16,6 +15,7 @@ import net.nemisolv.techshop.payload.product.response.ProductResponse;
 import net.nemisolv.techshop.payload.product.request.UpdateProductRequest;
 import net.nemisolv.techshop.repository.ProductRepository;
 import net.nemisolv.techshop.service.ProductService;
+import net.nemisolv.techshop.util.ResultCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -73,12 +73,12 @@ public class ProductServiceImpl implements ProductService {
         if(!isAccessible) {
             // means the product is retrieved for the user to view
              product = productRepository.findByIdAndActiveTrue(productId)
-                    .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                    .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Product not found"));
             return productMapper.toResponse(product);
         }
         // means the product is retrieved for the admin to edit
          product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Product not found"));
         return productMapper.toResponse(product);
 
     }

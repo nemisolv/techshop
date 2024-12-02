@@ -33,9 +33,14 @@ public enum ResultCode {
     USER_NOT_FOUND(20002, "User does not exist or account is disabled"),
     USER_ALREADY_EXISTS(20003, "User already exists"),
 
-    // Auth related errors
+    // Auth or author related errors
     AUTH_TOKEN_INVALID(20007, "Invalid token"),
     ROLE_NOT_FOUND(20008, "Role not found"),
+
+    PERMISSION_ALREADY_ASSIGNED(20009, "Permission already assigned to role"),
+
+
+
 
     /**
      * Store related errors

@@ -63,8 +63,8 @@ app:
   secure:
     jwt:
       secretKey: MHQCAQEEIEYgBlyQVsH7SpHUH7x4RErcckhu7ary/JjhP72Nk19EoAcGBSuBBAAKoUQDQgAE1MtHIxlGP5TARqBccrddNm1FnYH1Fp+onETz5KbXPSeG5FGwKMUXGfAmSZJq2gENULFewwymt+9bTXkjBZhh8A==
-      tokenExpireTime: 60000
-      refreshTokenExpireTime: 10080000
+      tokenExpireTime: 6000000000
+      refreshTokenExpireTime: 100800000000
   mail:
     from: nemisolv@gmail.com
   oauth2:
