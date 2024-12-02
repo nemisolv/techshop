@@ -11,7 +11,7 @@ import net.nemisolv.techshop.payload.product.request.UpdateProductRequest;
 public interface ProductService {
     PagedResponse<ProductOverviewResponse> getProducts(QueryOption queryOption);
 
-    ProductResponse getProductById(RetrieveDetailedProductRequest request);
+    ProductResponse getProductById(Long  id);
 
     PagedResponse<ProductOverviewResponse> getProductsByCategory(Long categoryId, QueryOption queryOption);
 

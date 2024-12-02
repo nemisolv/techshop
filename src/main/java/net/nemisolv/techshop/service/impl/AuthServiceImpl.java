@@ -10,8 +10,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.nemisolv.techshop.core._enum.AuthProvider;
 import net.nemisolv.techshop.core._enum.MailType;
+import net.nemisolv.techshop.core._enum.RoleName;
 import net.nemisolv.techshop.core.exception.BadCredentialException;
 import net.nemisolv.techshop.core.exception.BadRequestException;
+import net.nemisolv.techshop.core.exception.PermissionException;
+import net.nemisolv.techshop.core.exception.ResourceNotFoundException;
 import net.nemisolv.techshop.entity.ConfirmationEmail;
 import net.nemisolv.techshop.entity.Role;
 import net.nemisolv.techshop.entity.User;
@@ -28,7 +31,6 @@ import net.nemisolv.techshop.service.EmailService;
 import net.nemisolv.techshop.service.JwtService;
 import net.nemisolv.techshop.util.ResultCode;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -101,15 +103,15 @@ public class AuthServiceImpl implements AuthService {
                     .orElseThrow(() -> new BadRequestException(ResultCode.ROLE_NOT_FOUND));
 
         // Kiểm tra quyền của user hiện tại
-        if (currentUser.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
+        if (currentUser.getRole().getName().equals(RoleName.ADMIN)) {
             // Admin có thể gán bất kỳ role nào
-        } else if (currentUser.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MANAGER"))) {
+        } else if (currentUser.getRole().getName().equals(RoleName.MANAGER)) {
             // Manager chỉ được gán các role cụ thể
             if (!isAssignableByManager(roleToAssign)) {
-                throw new AccessDeniedException("Managers cannot assign this role.");
+                throw new PermissionException("Managers cannot assign this role.");
             }
         } else {
-            throw new AccessDeniedException("Unauthorized to assign roles.");
+            throw new PermissionException("Unauthorized to assign roles.");
         }
 
         User newUser = createUser(authRequest, roleToAssign);
@@ -192,7 +194,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void createAndSendVerificationEmail(RegisterRequest authRequest) throws MessagingException {
-        User newUser = createUser(authRequest, null);
+        Role customerRole = roleRepo.findByName(RoleName.CUSTOMER).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+
+        User newUser = createUser(authRequest, customerRole);
         userRepo.save(newUser);
 
         sendVerificationEmail(newUser);
@@ -267,7 +271,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private boolean isAssignableByManager(Role role) {
-        List<String> allowedRolesForManager = List.of("ROLE_STAFF", "ROLE_ASSISTANT");
+        List<String> allowedRolesForManager = List.of("STAFF", "ASSISTANT");
         return allowedRolesForManager.contains(role.getName().toString());
     }
 

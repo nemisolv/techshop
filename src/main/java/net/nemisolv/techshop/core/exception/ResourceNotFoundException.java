@@ -18,4 +18,9 @@ public class ResourceNotFoundException extends RuntimeException {
         super(customMessage);
         this.resultCode = resultCode;
     }
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+        this.resultCode = ResultCode.RESOURCE_NOT_FOUND;
+    }
 }

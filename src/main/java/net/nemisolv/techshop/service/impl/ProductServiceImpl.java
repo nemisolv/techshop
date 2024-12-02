@@ -66,18 +66,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponse getProductById(RetrieveDetailedProductRequest productRequest) {
-        Long productId = productRequest.id();
+    public ProductResponse getProductById(Long id) {
         boolean isAccessible = AccessHelper.isAccessAllowed(PermissionName.VIEW_SENSITIVE_PRODUCT);
         Product product;
         if(!isAccessible) {
             // means the product is retrieved for the user to view
-             product = productRepository.findByIdAndActiveTrue(productId)
+             product = productRepository.findByIdAndActiveTrue(id)
                     .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Product not found"));
             return productMapper.toResponse(product);
         }
         // means the product is retrieved for the admin to edit
-         product = productRepository.findById(productId)
+         product = productRepository.findById(id)
                 .orElseThrow(() -> new net.nemisolv.techshop.core.exception.ResourceNotFoundException(ResultCode.RESOURCE_NOT_FOUND,"Product not found"));
         return productMapper.toResponse(product);
 

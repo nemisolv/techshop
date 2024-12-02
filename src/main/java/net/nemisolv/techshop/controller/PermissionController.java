@@ -60,12 +60,12 @@ public class PermissionController {
         return ApiResponse.success(permissionService.updatePermissionsForRole(roleId, request.permissionIds()));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<Void> deletePermission(@PathVariable Long id) {
-        permissionService.deletePermission(id);
-        return ApiResponse.success();
-    }
+//    @DeleteMapping("/{id}")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ApiResponse<Void> deletePermission(@PathVariable Long id) {
+//        permissionService.deletePermission(id);
+//        return ApiResponse.success();
+//    }
 
 
 }
