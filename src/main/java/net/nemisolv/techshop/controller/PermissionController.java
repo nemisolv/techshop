@@ -7,6 +7,7 @@ import net.nemisolv.techshop.payload.PagedResponse;
 import net.nemisolv.techshop.payload.QueryOption;
 import net.nemisolv.techshop.payload.permission.AssignPermissionToRoleRequest;
 import net.nemisolv.techshop.payload.permission.PermissionResponse;
+import net.nemisolv.techshop.payload.permission.UpdateAssignPermissionToRoleRequest;
 import net.nemisolv.techshop.service.PermissionService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -55,8 +56,8 @@ public class PermissionController {
     // didn't test this endpoint and below
     @PutMapping("/roles/{roleId}/permissions")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ApiResponse<List<PermissionResponse>> updatePermissionsForRole(@PathVariable Long roleId, @RequestBody List<Long> permissionIds) {
-        return ApiResponse.success(permissionService.updatePermissionsForRole(roleId, permissionIds));
+    public ApiResponse<List<PermissionResponse>> updatePermissionsForRole(@PathVariable Long roleId, @RequestBody @Valid UpdateAssignPermissionToRoleRequest request) {
+        return ApiResponse.success(permissionService.updatePermissionsForRole(roleId, request.permissionIds()));
     }
 
     @DeleteMapping("/{id}")

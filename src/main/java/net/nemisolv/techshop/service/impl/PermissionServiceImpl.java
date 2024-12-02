@@ -159,12 +159,25 @@ public class PermissionServiceImpl implements PermissionService {
 
 
         if (currentUser.getRole().getName() == RoleName.ADMIN) {
+            // check if role also is admin, if so, throw exception
+            if(role.getName() == RoleName.ADMIN) {
+                throw new PermissionException(ResultCode.USER_PERMISSION_ERROR,"You are admin with all permissions, you cannot update permissions for admin role.");
+            }
+
+
             // Admin can update all permissions for the role
             role.setPermissions(new HashSet<>(permissions));
         } else if (currentUser.getRole().getName() == RoleName.MANAGER) {
+            // a manager can't update permissions for admin, manager, You can only update for roles below your role
+            if(role.getName() == RoleName.ADMIN || role.getName() == RoleName.MANAGER) {
+                throw new PermissionException(
+                        ResultCode.USER_PERMISSION_ERROR,"You are manager with limited permissions," +
+                        " you cannot update permissions for admin or manager role.");
+            }
+
             // Manager can only update basic permissions for the role
             if (permissions.stream().anyMatch(permission -> !isBasicPermission(permission))) {
-                throw new AccessDeniedException("Managers cannot assign advanced permissions.");
+                throw new PermissionException("Managers cannot assign advanced permissions.");
             }
             role.setPermissions(new HashSet<>(permissions));
         }
